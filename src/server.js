@@ -1,4 +1,10 @@
-require("./config/env");
+try {
+  require("./config/env");
+} catch (err) {
+  console.error(err.message || err);
+  process.exit(1);
+}
+
 const http = require("http");
 const { Server } = require("socket.io");
 const app = require("./app");

@@ -1,5 +1,57 @@
 require("dotenv").config();
 
+const REQUIRED_STRING = [
+  "MONGODB_URI",
+  "JWT_SECRET",
+  "NODE_ENV",
+  "CORS_ORIGIN",
+  "BODY_PARSER_LIMIT",
+  "JWT_EXPIRES_IN",
+];
+
+const REQUIRED_INT = [
+  "PORT",
+  "MESSAGE_MAX_LENGTH",
+  "AUTH_RATE_LIMIT_WINDOW_MS",
+  "AUTH_RATE_LIMIT_MAX",
+  "BCRYPT_SALT_ROUNDS",
+  "PROPERTY_PAGINATION_DEFAULT",
+  "PROPERTY_PAGINATION_MAX",
+  "MESSAGE_PAGINATION_DEFAULT",
+  "MESSAGE_PAGINATION_MAX",
+  "PASSWORD_MIN_LENGTH",
+];
+
+function validateEnv() {
+  const missing = [];
+  for (const name of REQUIRED_STRING) {
+    const v = process.env[name];
+    if (v === undefined || v === "") missing.push(name);
+  }
+  for (const name of REQUIRED_INT) {
+    const v = process.env[name];
+    if (v === undefined || v === "") {
+      missing.push(name);
+      continue;
+    }
+    const n = Number.parseInt(v, 10);
+    if (!Number.isFinite(n)) missing.push(`${name} (invalid integer)`);
+  }
+
+  if (missing.length > 0) {
+    const msg = [
+      "Missing or invalid environment variables:",
+      ...missing.map((m) => `  - ${m}`),
+      "",
+      "On Render: Dashboard → your Web Service → Environment → add each key.",
+      "Copy names and sample values from .env.example in the repo.",
+    ].join("\n");
+    throw new Error(msg);
+  }
+}
+
+validateEnv();
+
 function required(name) {
   const v = process.env[name];
   if (v === undefined || v === "") {
