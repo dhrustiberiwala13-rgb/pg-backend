@@ -1,49 +1,88 @@
-try {
-  require("./config/env");
-} catch (err) {
-  console.error(err.message || err);
+function writeErr(...parts) {
+  process.stderr.write(parts.join(" ") + "\n");
+}
+
+process.on("unhandledRejection", (reason) => {
+  writeErr("[fatal] unhandledRejection:", String(reason));
+  if (reason && reason.stack) writeErr(reason.stack);
+  process.exit(1);
+});
+
+process.on("uncaughtException", (err) => {
+  writeErr("[fatal] uncaughtException:", err.message);
+  writeErr(err.stack || "");
+  process.exit(1);
+});
+
+function fatal(err, label) {
+  writeErr(`[fatal] ${label}`);
+  if (err && err.message) writeErr(err.message);
+  else writeErr(String(err));
+  if (err && err.stack) writeErr(err.stack);
   process.exit(1);
 }
 
-const http = require("http");
-const { Server } = require("socket.io");
-const app = require("./app");
-const connectDB = require("./db");
-const { MONGODB_URI, PORT } = require("./config/env");
-const { registerSocket, socketCorsConfig } = require("./socket");
+(async function main() {
+  writeErr("[pg-backend] starting...");
 
-const server = http.createServer(app);
+  try {
+    require("./config/env");
+  } catch (err) {
+    fatal(err, "Environment validation failed");
+  }
 
-const io = new Server(server, {
-  cors: socketCorsConfig(),
-});
+  const http = require("http");
+  const { Server } = require("socket.io");
 
-registerSocket(io);
+  let app;
+  try {
+    app = require("./app");
+  } catch (err) {
+    fatal(err, "Failed to load Express app (check dependencies and routes)");
+  }
 
-const BASE_PORT = PORT;
+  const connectDB = require("./db");
+  const { MONGODB_URI, PORT } = require("./config/env");
 
-const startServer = (port) => {
-  server
-    .listen(port, () => {
-      console.log(`Server running on port ${port}`);
-    })
-    .on("error", (err) => {
-      if (err.code === "EADDRINUSE") {
-        console.log(`Port ${port} busy, trying ${port + 1}...`);
-        startServer(port + 1);
-        return;
-      }
+  let registerSocket;
+  let socketCorsConfig;
+  try {
+    ({ registerSocket, socketCorsConfig } = require("./socket"));
+  } catch (err) {
+    fatal(err, "Failed to load Socket.IO layer");
+  }
 
-      throw err;
-    });
-};
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: socketCorsConfig(),
+  });
+  registerSocket(io);
 
-(async () => {
   try {
     await connectDB(MONGODB_URI);
-    startServer(BASE_PORT);
   } catch (err) {
-    console.error("Failed to start:", err);
-    process.exit(1);
+    fatal(
+      err,
+      "MongoDB connection failed — use Atlas (not localhost), whitelist 0.0.0.0/0 in Atlas Network Access, verify MONGODB_URI user/password"
+    );
   }
+
+  const BASE_PORT = PORT;
+
+  const startServer = (port) => {
+    server
+      .listen(port, "0.0.0.0", () => {
+        process.stdout.write(`Server running on port ${port}\n`);
+      })
+      .on("error", (err) => {
+        if (err.code === "EADDRINUSE") {
+          writeErr(`Port ${port} busy, trying ${port + 1}...`);
+          startServer(port + 1);
+          return;
+        }
+        fatal(err, "HTTP server listen error");
+      });
+  };
+
+  startServer(BASE_PORT);
 })();
