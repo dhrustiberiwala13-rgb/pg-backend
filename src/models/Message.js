@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { MESSAGE_MAX_LENGTH } = require("../config/env");
 
 const messageSchema = new mongoose.Schema(
   {
@@ -12,7 +13,12 @@ const messageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    message: { type: String, required: true, trim: true, maxlength: 8000 },
+    message: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: MESSAGE_MAX_LENGTH,
+    },
   },
   { timestamps: true }
 );

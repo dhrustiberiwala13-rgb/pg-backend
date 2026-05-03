@@ -4,6 +4,15 @@ const Message = require("../models/Message");
 const { protect } = require("../middleware/auth");
 const asyncHandler = require("../middleware/asyncHandler");
 const { parsePagination } = require("../utils/propertyQuery");
+const {
+  MESSAGE_PAGINATION_DEFAULT,
+  MESSAGE_PAGINATION_MAX,
+} = require("../config/env");
+
+const messagePaginationOpts = {
+  defaultLimit: MESSAGE_PAGINATION_DEFAULT,
+  maxLimit: MESSAGE_PAGINATION_MAX,
+};
 
 const router = express.Router();
 
@@ -25,12 +34,12 @@ router.get(
     .isMongoId()
     .withMessage("Invalid partner user id"),
   query("page").optional().isInt({ min: 1 }),
-  query("limit").optional().isInt({ min: 1, max: 100 }),
+  query("limit").optional().isInt({ min: 1, max: MESSAGE_PAGINATION_MAX }),
   validate,
   asyncHandler(async (req, res) => {
     const partnerId = req.query.with;
     const me = req.user._id;
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, messagePaginationOpts);
 
     const filter = {
       $or: [

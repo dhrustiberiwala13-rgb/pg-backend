@@ -26,8 +26,10 @@ describe("buildPropertyFilter", () => {
 });
 
 describe("parsePagination", () => {
+  const opts = { defaultLimit: 10, maxLimit: 50 };
+
   it("clamps limit", () => {
-    const p = parsePagination({ page: "1", limit: "999" });
+    const p = parsePagination({ page: "1", limit: "999" }, opts);
     assert.equal(p.limit, 50);
   });
 });

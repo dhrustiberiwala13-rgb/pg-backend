@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test tests/propertyQuery.test.js tests/app.test.js"
+    "test": "node --env-file=.env.example --test tests/propertyQuery.test.js tests/app.test.js"
   },
   "keywords": [],
   "author": "",

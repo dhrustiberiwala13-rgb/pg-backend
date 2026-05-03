@@ -8,6 +8,15 @@ const {
   buildPropertyFilter,
   parsePagination,
 } = require("../utils/propertyQuery");
+const {
+  PROPERTY_PAGINATION_DEFAULT,
+  PROPERTY_PAGINATION_MAX,
+} = require("../config/env");
+
+const propertyPaginationOpts = {
+  defaultLimit: PROPERTY_PAGINATION_DEFAULT,
+  maxLimit: PROPERTY_PAGINATION_MAX,
+};
 
 const router = express.Router();
 
@@ -40,13 +49,13 @@ function canViewProperty(user, property) {
 router.get(
   "/",
   query("page").optional().isInt({ min: 1 }),
-  query("limit").optional().isInt({ min: 1, max: 50 }),
+  query("limit").optional().isInt({ min: 1, max: PROPERTY_PAGINATION_MAX }),
   query("minPrice").optional().isNumeric(),
   query("maxPrice").optional().isNumeric(),
   validate,
   asyncHandler(async (req, res) => {
     const filter = buildPropertyFilter(req.query);
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, propertyPaginationOpts);
 
     const [items, total] = await Promise.all([
       Property.find(filter)
@@ -71,10 +80,10 @@ router.get(
   "/user/mine",
   protect,
   query("page").optional().isInt({ min: 1 }),
-  query("limit").optional().isInt({ min: 1, max: 50 }),
+  query("limit").optional().isInt({ min: 1, max: PROPERTY_PAGINATION_MAX }),
   validate,
   asyncHandler(async (req, res) => {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, propertyPaginationOpts);
     const filter = { ownerId: req.user._id };
 
     const [items, total] = await Promise.all([

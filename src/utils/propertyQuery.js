@@ -32,9 +32,11 @@ function buildPropertyFilter(query) {
   return filter;
 }
 
-function parsePagination(query) {
+function parsePagination(query, { defaultLimit, maxLimit }) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const limit = Math.min(50, Math.max(1, parseInt(query.limit, 10) || 10));
+  const raw = parseInt(query.limit, 10);
+  const fallback = Number.isFinite(raw) ? raw : defaultLimit;
+  const limit = Math.min(maxLimit, Math.max(1, fallback));
   const skip = (page - 1) * limit;
   return { page, limit, skip };
 }

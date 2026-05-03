@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Message = require("../models/Message");
-const { corsAllowedOrigins, CORS_ORIGIN } = require("../config/env");
+const { corsAllowedOrigins, CORS_ORIGIN, MESSAGE_MAX_LENGTH } = require("../config/env");
 
 function isValidObjectId(id) {
   return typeof id === "string" && mongoose.Types.ObjectId.isValid(id);
@@ -32,7 +32,7 @@ function registerSocket(io) {
         const doc = await Message.create({
           senderId,
           receiverId,
-          message: text.trim().slice(0, 8000),
+          message: text.trim().slice(0, MESSAGE_MAX_LENGTH),
         });
         await doc.populate("senderId receiverId", "name email");
 
